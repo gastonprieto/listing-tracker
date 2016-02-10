@@ -5,7 +5,7 @@ errors = require("./components/errors")
 
 module.exports = (app) ->
   # Insert routes below
-  app.use "/api/listings", require("./api/listing")
+  app.use "/listings", require("./api/listing")
 
   # --- PUT MORE ROUTES HERE ---
   # All undefined asset or api routes should return a 404
