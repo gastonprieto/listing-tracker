@@ -1,6 +1,6 @@
 ## Ejercicio ListingTracker
 
-Este proyecto es una API para trackear las ventas de publicaciones (**listings** en inglés) de MercadoLibre.  
+Este proyecto es una API desarrollada en Node.js que sirve para trackear las ventas de publicaciones (**listings** en inglés) de MercadoLibre.  
 Las publicaciónes de MercadoLibre tienen la propiedad `sold_quantity` que representa el total de ventas que tuvo la publicación
 desde que fue creada. Ejemplo de una [publicación](https://api.mercadolibre.com/items/MLA602638710).  
 Sin embargo, en este proyecto lo que interesa son las ventas que tiene una publicación desde que se empieza a monitorear.
