@@ -3,7 +3,7 @@ Listing = require("./listing.model")
 
 updateListing = (listing, newListing, callback) ->
   newQuantity = newListing.sold_quantity - listing.initial_sold_quantity
-  return callback null if listing.quantity = newQuantity
+  return callback null if listing.quantity == newQuantity
   listing.quantity = newQuantity
   listing.save callback
 
