@@ -21,6 +21,9 @@ ListingSchema = new Schema
     type: Number
     default: 0
 
+ListingSchema.statics.findByListing = (listing_id, callback) ->
+  @findOne { listing_id: listing_id }, callback
+
 ListingSchema.methods.toJSON = ->
   _.omit @toObject(), ['_id', '__v']
 

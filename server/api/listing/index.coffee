@@ -6,6 +6,7 @@ router = express.Router()
 
 router.get "/", controller.getAll
 router.post "/", controller.create
+router.post "/upsert", controller.massiveUpsert
 router.get "/:listing_id", controller.getOne
 router.put "/:listing_id", controller.update
 
