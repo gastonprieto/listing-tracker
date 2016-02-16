@@ -5,8 +5,17 @@ SellerListingsUpdater = require('./run')
 
 describe 'SellerListingsUpdater', ->
 
+  @.timeout(5000);
+
   serverML = nock('https://api.mercadolibre.com')
   serverLocalhost = nock('http://localhost:9000')
+
+  items = _.times 270, (i) ->
+    id: 'MLM' + i,
+    seller_id: 154901871,
+    title: 'title' + i,
+    sold_quantity: i
+
 
   beforeEach = ->
     nock.disableNetConnect()
@@ -15,41 +24,38 @@ describe 'SellerListingsUpdater', ->
     nock.cleanAll();
     nock.enableNetConnect()
 
-  mockML = (result) ->
+  mockML = (offset, total) ->
     serverML
       .get '/sites/MLM/search'
       .query
         limit: 50,
-        offset: 0,
+        offset: offset,
         seller_id: 154901871
-      .reply 200, result
+      .reply 200,
+        paging:
+          total: total,
+          offset: offset,
+          limit: 50
+        results:
+          items[offset..offset + Math.min(50, total - offset) - 1]
 
   mockServer = ->
     serverLocalhost
       .post '/listings/upsert'
       .reply 200
 
-  items = _.times 180, (i) ->
-    id: 'MLM' + i,
-    seller_id: 154901871,
-    title: 'title' + i,
-    sold_quantity: i
+  runTest = (amountPages, done) ->
+    status = count : 0
+    SellerListingsUpdater.process (err) -> 
+      done(err) if err
+      status.count++
 
-  it 'should be create listing when exist one page', (done) ->
-    mockML 
-      paging: 
-        total: 30,
-        offset: 0,
-        limit: 50
-      results:
-        _.take items, 30
+    setTimeout (->
+      status.count.should.be.eql amountPages
+      done()), 2000
 
+  it 'should be get a once page and creates', (done) ->
+    mockML 0, 30
     mockServer()
+    runTest 1, done
 
-    SellerListingsUpdater.process (err) ->
-      serverML.done()
-      serverLocalhost.done()
-      done(err) 
-
-
-    
