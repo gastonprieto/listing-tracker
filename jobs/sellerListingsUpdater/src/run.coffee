@@ -2,20 +2,17 @@ _ = require('lodash')
 async = require('async')
 request = require('request')
 
-ml_host = 'https://api.mercadolibre.com'
+ml_host = 'https://api.mercadolibre.com:443'
 server = 'http://localhost:9000'
 seller_id = 154901871
 req_max = 5
+page_limit = 50
 
 getArticlesBySeller = (seller_id, offset, limit, callback) ->
   request
-    url: ml_host + '/sites/MLM/search'
+    uri: ml_host + "/sites/MLM/search?seller_id=#{seller_id}&offset=#{offset}&limit=#{page_limit}"
     method: 'GET'
     json: true
-    qs:
-      seller_id: seller_id
-      offset: offset
-      limit: limit
     callback
 
 saveArticles = (articles, callback) ->
@@ -26,25 +23,27 @@ saveArticles = (articles, callback) ->
     body: articles
     callback
 
-newPage = (offset) -> 
+newPage = (page, offset) -> 
   seller_id: seller_id
   offset: offset
-  limit: 50
+  limit: page_limit
+  page: page
 
-processPage = (queue, task, pageCallback) ->
+processPage = (queue, task, callbacks) ->
+  callbacks.start(task)
   queue.push task,
     (err) ->
       res = task.res
       maxElement = res.paging.offset + res.results.length
-      processPage queue, ( seller_id: seller_id, offset: maxElement + 1, limit: 50 ), pageCallback if maxElement != res.paging.total
+      processPage queue, (newPage (task.page + 1), maxElement), callbacks if maxElement != res.paging.total
 
       articles = _.map res.results, (result) ->
-        _.defaults _.pick(result, ['title', 'seller_id', 'sold_quantity']), listing_id: result.id
+        _.defaults _.pick(result, ['title', 'seller_id', 'sold_quantity']), (listing_id: result.id, seller_id: res.seller.id)
       
       saveArticles articles, (err, res) ->
-        pageCallback(err)
+        callbacks.finish(err, task)
 
-exports.process = (pageCallback, finishCallback) ->
+exports.process = (callbacks) ->
   
   queue = async.queue (task, callback) ->
     getArticlesBySeller task.seller_id, task.offset, task.limit, (err, res) ->
@@ -52,6 +51,6 @@ exports.process = (pageCallback, finishCallback) ->
       callback(err)
     , req_max
 
-  processPage queue, (newPage 0), pageCallback
+  processPage queue, (newPage 0, 0), callbacks
 
   
