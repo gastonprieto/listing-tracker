@@ -1,4 +1,5 @@
 _ = require('lodash')
+async = require('async')
 Listing = require("./listing.model")
 
 updateListing = (listing, newListing, callback) ->
@@ -34,3 +35,15 @@ exports.update = (req, res, next) ->
     return next(err) if err
     updateListing listing, req.body, (err) ->
       send(res, next)(err, listing)
+
+exports.massiveUpsert = (req, res, next) ->
+  createOrUpdate = (actualListing, callback) ->
+    Listing.findByListing actualListing.listing_id, (err, listing) ->
+      return callback err, null if err
+      return updateListing(listing, actualListing, (err) -> callback err, listing) if listing?
+      Listing.create newListing(actualListing), callback
+
+  return res.status(400).send(error: 'Too many elements. The maximum amount is 50') if req.body.length > 50
+
+  async.map req.body, createOrUpdate, (err, results) ->
+    send(res, next)(err, null)
